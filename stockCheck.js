@@ -28,31 +28,40 @@ function stockCheck(id) {
 * @returns {Promise} resolve/reject to out of stock products or error code
 **/
 
-module.exports = async function solution(product) {
-    return new Promise((resolve, reject) => {
-     //  remove duplicates with Set
-     const set = [... new Set(product)];
-     // convert set to array - think this may have been my problem
-     const arr = Array.from(set);
-     // declare invalid id 
-     const invalid = ['invalid-format'];
-     // iterate over array to check for invalid ids
-     for (let i = 0; i < arr.length; i++) {
-       if (!arr[i].match(/^\d{4}-\d{4}-\d{4}-\d{4}$/)) {
-         invalid.push(arr[i]);
-       }
-     }
-     // return invalid ids if there is 1 or more
-     if (invalid.length >= 2) { reject(invalid); }
-     try {
-       // iterate over array and return ids in array - This isn't working and I ran out of time trying to fix it
-       resolve(arr.map(stockCheck()));
-     } catch (err) {
-        console.log(err);
-       // return valid error format
-       reject([err.code, err.id])
-     }
-     // in case of any unexpected errors
-     reject(['internal_system_error']);
-   })
- }
+module.exports = function solution(product) {
+  return new Promise(async (resolve, reject) => {
+    // make sure product array isn't empty
+    if (product.length === 0) { reject(['internal_system_error']); }
+    //  remove duplicates with Set
+    const arr = [... new Set(product)];
+    // declare array to hold any invalid ids
+    const invalid = ['invalid-format'];
+    // iterate over product id array to check for invalid ids
+    for (let i = 0; i < arr.length; i++) {
+      if (!arr[i].match(/^\d{4}-\d{4}-\d{4}-\d{4}$/)) {
+        invalid.push(arr[i]);
+      }
+    }
+    // reject promise if any invalid ids are found
+    if (invalid.length >= 2) {
+      reject(invalid);
+    } else {
+      // run stockCheck on product ids and reject if stockCheck rejects
+      const outOfStock = await Promise.all(
+        arr.map(async (id) => {
+          try {
+            const resolved = await stockCheck(id);
+            return resolved.id;
+          } catch (rejected) {
+            reject([rejected.id, rejected.code]);
+          }
+        })
+      ).catch(() => {
+        // reject if any unexpected errors are caught
+        reject(['internal_system_error']);
+      });
+      // resolve with array of valid product ids
+      resolve(outOfStock);
+    }
+  });
+}
