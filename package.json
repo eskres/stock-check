@@ -1,0 +1,15 @@
+{
+  "name": "stock-check",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "description": "",
+  "main": "stockCheck.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "Einar Skreslett",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.5.0"
+  }
+}
